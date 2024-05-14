@@ -17,6 +17,7 @@ load(
 load("//terraform/kubernetes/resources/v2/config.proto", "KubernetesConfigMap")
 load("//terraform/kubernetes/resources/v2/secret.proto", "KubernetesSecret")
 load("//terraform/kubernetes/resources/v2/service.proto", "KubernetesService")
+load("//terraform/kubernetes/resources/v2/ingress.proto", "KubernetesIngressV1")
 
 
 def Chain(msg, *hooks):
@@ -277,6 +278,37 @@ def Kubernetes(spec, name, *hooks):
 
                     return do
 
+                def AddIngress(service_name, port, annotations, class_name="alb"):
+                    def add_ingress(c, next):
+                        Chain(
+                            tf,
+                            util.Resource(
+                                service_name,
+                                KubernetesIngressV1(
+                                    wait_for_load_balancer=True,
+                                    metadata=KubernetesIngressV1.Metadata(
+                                        name=service_name,
+                                        namespace=msg.metadata.namespace,
+                                        annotations=annotations,
+                                    ),
+                                    spec=KubernetesIngressV1.Spec(
+                                        ingress_class_name=class_name,
+                                        default_backend=KubernetesIngressV1.Spec.DefaultBackend(
+                                            service=KubernetesIngressV1.Spec.DefaultBackend.Service(
+                                                name=service_name,
+                                                port=KubernetesIngressV1.Spec.DefaultBackend.Service.Port(
+                                                    number=port
+                                                ),
+                                            )
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        )
+                        return next(c)
+
+                    return add_ingress
+
                 def AddVolume(name, path, size="10Gi", storage_class="gp2"):
                     def do(c, next):
                         c.volume_mount.append(
@@ -298,6 +330,7 @@ def Kubernetes(spec, name, *hooks):
                     AddPort=AddPort,
                     AddServicePort=AddServicePort,
                     AddVolume=AddVolume,
+                    AddIngress=AddIngress,
                 )
                 container = Chain(
                     container_spec(), *[hook(container_util) for hook in hooks]
