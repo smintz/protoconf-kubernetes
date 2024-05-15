@@ -259,7 +259,7 @@ def Kubernetes(spec, name, *hooks):
                                     metadata=KubernetesService.Metadata(
                                         name=name,
                                         namespace=msg.metadata.namespace,
-                                        annotations=ingress_annotations,
+                                        annotations=ingress_annotations if ingress_annotations else {},
                                     ),
                                     spec=KubernetesService.Spec(
                                         port=[
