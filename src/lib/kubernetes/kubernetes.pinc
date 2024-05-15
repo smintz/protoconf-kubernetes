@@ -248,6 +248,7 @@ def Kubernetes(spec, name, *hooks):
                         selector["port_name"] = name
                         target_port = overrides.get("target_port", port)
                         port_name = overrides.get("port_name", name)
+                        service_type = overrides.get("type", "ClusterIP")
                         Chain(msg, SetLabels(**selector))
                         Chain(c, AddPort(port_name, port, protocol))
                         Chain(
@@ -256,7 +257,9 @@ def Kubernetes(spec, name, *hooks):
                                 name,
                                 KubernetesService(
                                     metadata=KubernetesService.Metadata(
-                                        name=name, namespace=msg.metadata.namespace
+                                        name=name,
+                                        namespace=msg.metadata.namespace,
+                                        annotations=ingress_annotations,
                                     ),
                                     spec=KubernetesService.Spec(
                                         port=[
@@ -269,7 +272,7 @@ def Kubernetes(spec, name, *hooks):
                                         ],
                                         selector=selector,
                                         cluster_ip="None" if headless else "",
-                                        # type="NodePort" if ingress_annotations else "",
+                                        type=service_type,
                                     ),
                                 ),
                             ),
