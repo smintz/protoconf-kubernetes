@@ -269,7 +269,7 @@ def Kubernetes(spec, name, *hooks):
                                         ],
                                         selector=selector,
                                         cluster_ip="None" if headless else "",
-                                        type="NodePort" if ingress_annotations else "",
+                                        # type="NodePort" if ingress_annotations else "",
                                     ),
                                 ),
                             ),
@@ -285,7 +285,6 @@ def Kubernetes(spec, name, *hooks):
                             util.Resource(
                                 service_name,
                                 KubernetesIngressV1(
-                                    wait_for_load_balancer=True,
                                     metadata=KubernetesIngressV1.Metadata(
                                         name=service_name,
                                         namespace=msg.metadata.namespace,
